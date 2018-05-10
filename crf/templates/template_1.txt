@@ -1,0 +1,7 @@
+# all unigrams
+# current token
+U00:%x[0,0]
+# POS tag of the token, previous token, next token
+U01:%x[0,1]
+U02:%x[-1,1]
+U03:%x[1,1]

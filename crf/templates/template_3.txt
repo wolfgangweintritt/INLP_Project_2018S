@@ -1,0 +1,7 @@
+# all bigrams
+# bigram token (current and next)
+U00:%x[0,0]%x[1,0]
+# POS tag of the token, previous token, next token
+B01:%x[0,1]
+B02:%x[-1,1]
+B03:%x[1,1]
