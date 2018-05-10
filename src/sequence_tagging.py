@@ -7,7 +7,8 @@ from sklearn.preprocessing import LabelEncoder
 
 from typing import Tuple, List
 import pandas as pd
-from src import parse_input as input_parser, parse_output as output_parser
+import parsers.parse_input as input_parser
+import parsers.parse_output as output_parser
 
 NOT_IN_SENTENCE_POS = "NIS"
 label_encoder = LabelEncoder()
