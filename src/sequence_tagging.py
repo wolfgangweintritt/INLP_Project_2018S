@@ -50,8 +50,9 @@ def parse_input_and_get_dataframe(train_filename: str, test_filename: str) -> Tu
     df = pd.DataFrame(merged_data)
     df_target = label_encoder.fit_transform(df.iloc[:, -1])
     df = df.iloc[:, 0:-1]
+
     print("doing one-hot encoding...")
-    df = pd.get_dummies(df)
+    df = pd.get_dummies(df, sparse=True)
     return df, df_target, test_data, test_data_sentence_ending, split_line
 
 
