@@ -5,7 +5,7 @@ from typing import List
 import time
 
 
-def parse_output(test_df: List, test_data_predictions: List, test_sentence_ending: List):
+def parse_output(test_df: List, words: List, test_data_predictions: List, test_sentence_ending: List):
     """create output file with fitting structure for conlleval"""
 
     test_sentence_ending.reverse()
@@ -17,5 +17,5 @@ def parse_output(test_df: List, test_data_predictions: List, test_sentence_endin
                 test_sentence_ending.pop()
                 line_number += 1
             # structure: word POS-tag CHUNK-tag predicted-CHUNK-tag
-            output_file.write('{} {} {} {}\n'.format(test_df[idx][0], test_df[idx][1], test_df[idx][4], test_data_predictions[idx]))
+            output_file.write('{} {} {} {}\n'.format(words[idx], test_df[idx][1], test_df[idx][4], test_data_predictions[idx]))
             line_number += 1

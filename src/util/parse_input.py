@@ -10,6 +10,7 @@ AFTER_SENTENCE_POS  = "AFTER_SENTENCE"
 
 def parse_input(filename: str) -> Tuple[List, List]:
     """parse input file; add POS-tag of previous word, next word, save sentence-end positions"""
+    # output has format [(WORD, POS, PREV-POS, NEXT-POS, CHUNK)]
 
     prev_POS = BEFORE_SENTENCE_POS
     data = []
