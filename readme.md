@@ -18,7 +18,7 @@ CoNLL 2000 Sequence Chunking dataset and toolsCoNLL 2000 Sequence Chunking datas
 
 ## Requirements:
 * CRF++
-* Python modules: scikit, pandas
+* Python modules: scikit, pandas, gensim
 
 ## Group Members:
 * Maximilian Moser (01326252)
