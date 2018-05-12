@@ -2,6 +2,7 @@
 """parse training and test data. predict CHUNK-tags via MLP classifier. create outputfile in matching format for conlleval."""
 from gensim.models import word2vec
 from pprint import pprint
+from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder
 from typing import Tuple, List
@@ -21,8 +22,10 @@ def main():
     epilog = "By Wolfgang Weintritt and Maximilian Moser, 2018"
     ap = argparse.ArgumentParser(description=descr, epilog=epilog)
     ap.add_argument("--word2vec", "-w", help="use word vectors (word2vec)", action="store_true")
+    ap.add_argument("--grid-search", "-g", help="perform grid search over a pre-selected parameter space", action="store_true")
     args = ap.parse_args()
     use_word_vectors = args.word2vec
+    use_grid_search = args.grid_search
 
     parsed_input = parse_input_and_get_dataframe("train.txt", "test.txt", use_word_vectors)
     df                        = parsed_input.data
@@ -32,8 +35,13 @@ def main():
     words                     = parsed_input.words
     split_line                = parsed_input.split_line
 
-    print("training MLP classifier...")
     mlp_clf = MLPClassifier(hidden_layer_sizes=(10,), activation='relu', solver='adam')
+    if use_grid_search:
+        print("tuning hyper-parameters...")
+        params = {"hidden_layer_sizes": [(10,), (10,20,10)], "max_iter": [200, 500]}
+        mlp_clf = GridSearchCV(mlp_clf, params, n_jobs=-1)
+
+    print("training MLP classifier...")
     mlp_clf.fit(df[:split_line], df_target[:split_line])
     print("classifying test data...")
     test_data_predictions = mlp_clf.predict(df[split_line:])
