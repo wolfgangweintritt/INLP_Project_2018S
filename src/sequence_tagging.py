@@ -41,12 +41,11 @@ def main():
     # pprint(df_target[split_line:])
     # pprint(test_data_predictions)
 
-    output_parser.parse_output(test_data, words, label_encoder.inverse_transform(test_data_predictions), test_data_sentence_ending)
+    output_parser.parse_output(test_data, words[split_line:], label_encoder.inverse_transform(test_data_predictions), test_data_sentence_ending)
     print("done.")
 
 
 def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_vectors: bool) -> ParsedInput:
-    words                                = []
     vector_size                          = 100
     train_data, _                        = input_parser.parse_input(train_filename)
     test_data, test_data_sentence_ending = input_parser.parse_input(test_filename)
@@ -62,6 +61,7 @@ def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_
     # merged data size: 259104
     # we have to merge the data because of one-hot encoding
     merged_data = train_data + test_data
+    words = [w for (w, p, pp, np, c) in merged_data]
     print("merged data size: {}".format(len(merged_data)))
 
     if word_vectors:
@@ -72,7 +72,6 @@ def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_
         sentences = []
         sentence  = []
         for word, pos, prevpos, nextpos, chunk in merged_data:
-            words.append(word)
             sentence.append(word)
             if nextpos == "AFTER_SENTENCE":
                 # meaning we currenlty have the end of the sentence
