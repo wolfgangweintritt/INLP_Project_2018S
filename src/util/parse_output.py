@@ -5,11 +5,11 @@ from typing import List
 import time
 
 
-def parse_output(test_df: List, words: List, test_data_predictions: List, test_sentence_ending: List):
+def parse_output(test_df: List, words: List, test_data_predictions: List, test_sentence_ending: List, classifier: str):
     """create output file with fitting structure for conlleval"""
 
     test_sentence_ending.reverse()
-    with open('mlp/output/output' + str(int(time.time())) + '.txt', 'w') as output_file:
+    with open('output/output_' + classifier + '_' + str(int(time.time())) + '.txt', 'w') as output_file:
         line_number = 0
         for idx in range(0, len(test_df)):
             if line_number == test_sentence_ending[-1]: # insert empty lines after sentences
