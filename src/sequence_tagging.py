@@ -19,17 +19,21 @@ label_encoder = LabelEncoder()
 
 
 def main():
+    startTime = datetime.now()
     descr  = "Applies machine-learning techniques (Neural Networks) to solve Chunking."
     epilog = "By Wolfgang Weintritt and Maximilian Moser, 2018"
     ap = argparse.ArgumentParser(description=descr, epilog=epilog)
     ap.add_argument("--word2vec", "-w", help="use word vectors (word2vec)", action="store_true")
     ap.add_argument("--classifier", "-c", help="choose classifier", choices=["MLP", "RF", "SVM"], default="MLP")
     ap.add_argument("--grid-search", "-g", help="perform grid search over a pre-selected parameter space", action="store_true")
+    ap.add_argument("--percent-of-train-data", "-p", help="only use some percent of the training data, to speedup the process", type=int, choices=range(1, 101), default=100)
     args = ap.parse_args()
     use_word_vectors = args.word2vec
     classifier = args.classifier
     use_grid_search = args.grid_search
+    percent_of_train_data = args.percent_of_train_data
 
+    parsed_input = parse_input_and_get_dataframe("train.txt", "test.txt", use_word_vectors, percent_of_train_data)
     df                        = parsed_input.data
     df_target                 = parsed_input.data_target
     test_data                 = parsed_input.test_data
@@ -65,22 +69,21 @@ def main():
     # pprint(df_target[split_line:])
     # pprint(test_data_predictions)
 
-    print("done.")
     output_parser.parse_output(test_data, words[split_line:], label_encoder.inverse_transform(test_data_predictions), test_data_sentence_ending, classifier)
+    print("done, took: {}".format((datetime.now() - startTime).seconds))
 
 
-def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_vectors: bool) -> ParsedInput:
+def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_vectors: bool, percent_of_train_data: int) -> ParsedInput:
     vector_size                          = 100
     train_data, _                        = input_parser.parse_input(train_filename)
     test_data, test_data_sentence_ending = input_parser.parse_input(test_filename)
     # len train_data: 211727
     # len test_data: 47377
-    pprint("train data size: {}".format(len(train_data)))
-    pprint("test data size: {}".format(len(test_data)))
+    train_data_len = int(len(train_data) * (percent_of_train_data / 100))
+    train_data = train_data[0:train_data_len]
+    print("train data size: {}".format(len(train_data)))
+    print("test data size: {}".format(len(test_data)))
 
-    # reduce data size for test purposes
-    # train_data = train_data[0:100]
-    # test_data  = test_data [0:100]
     split_line = len(train_data)
     # merged data size: 259104
     # we have to merge the data because of one-hot encoding
