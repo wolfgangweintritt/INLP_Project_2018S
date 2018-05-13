@@ -24,16 +24,18 @@ def main():
     epilog = "By Wolfgang Weintritt and Maximilian Moser, 2018"
     ap = argparse.ArgumentParser(description=descr, epilog=epilog)
     ap.add_argument("--word2vec", "-w", help="use word vectors (word2vec)", action="store_true")
+    ap.add_argument("--just_word2vec", "-j", help="use just word vectors no CRF features (next POS, prev POS)", action="store_true")
     ap.add_argument("--classifier", "-c", help="choose classifier", choices=["MLP", "RF", "SVM"], default="MLP")
     ap.add_argument("--grid-search", "-g", help="perform grid search over a pre-selected parameter space", action="store_true")
     ap.add_argument("--percent-of-train-data", "-p", help="only use some percent of the training data, to speedup the process", type=int, choices=range(1, 101), default=100)
     args = ap.parse_args()
     use_word_vectors = args.word2vec
+    just_word2vec = args.just_word2vec
     classifier = args.classifier
     use_grid_search = args.grid_search
     percent_of_train_data = args.percent_of_train_data
 
-    parsed_input = parse_input_and_get_dataframe("train.txt", "test.txt", use_word_vectors, percent_of_train_data)
+    parsed_input = parse_input_and_get_dataframe("train.txt", "test.txt", use_word_vectors, just_word2vec, percent_of_train_data)
     df                        = parsed_input.data
     df_target                 = parsed_input.data_target
     test_data                 = parsed_input.test_data
@@ -46,8 +48,8 @@ def main():
     elif classifier == "RF":
         clf = RandomForestClassifier(n_estimators=50)
     else:  # classifier = "SVM"
-        #clf = SVC()
-        clf = NuSVC()
+        clf = SVC()
+        #clf = NuSVC()
     if use_grid_search:
         print("tuning hyper-parameters...")
         if classifier == "MLP":
@@ -69,11 +71,12 @@ def main():
     # pprint(df_target[split_line:])
     # pprint(test_data_predictions)
 
-    output_parser.parse_output(test_data, words[split_line:], label_encoder.inverse_transform(test_data_predictions), test_data_sentence_ending, classifier)
+    filename = get_output_filename(classifier, percent_of_train_data, use_word_vectors, just_word2vec)
+    output_parser.parse_output(test_data, words[split_line:], label_encoder.inverse_transform(test_data_predictions), test_data_sentence_ending, filename)
     print("done, took: {}".format((datetime.now() - startTime).seconds))
 
 
-def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_vectors: bool, percent_of_train_data: int) -> ParsedInput:
+def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_vectors: bool, just_word2vec: bool, percent_of_train_data: int) -> ParsedInput:
     vector_size                          = 100
     train_data, _                        = input_parser.parse_input(train_filename)
     test_data, test_data_sentence_ending = input_parser.parse_input(test_filename)
@@ -91,7 +94,7 @@ def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_
     words = [w for (w, p, pp, np, c) in merged_data]
     print("merged data size: {}".format(len(merged_data)))
 
-    if word_vectors:
+    if word_vectors or just_word2vec:
         print("creating word vectors...")
 
         # for word2vec, we need to create list of sentences (which are lists of words):
@@ -114,6 +117,9 @@ def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_
             word = itm.pop(0)
             itm.insert(0, vectors[word])
 
+    if just_word2vec:  # leave out POS tags
+        merged_data = [[w, p, c] for (w, p, pp, np, c) in merged_data]
+
     # create the dataframe (split up target and data, label-encode target)
     print("creating dataframe...")
     df = pd.DataFrame(merged_data)
@@ -121,7 +127,7 @@ def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_
     df = df.iloc[:, 0:-1]
 
     print("doing one-hot encoding...")
-    if not word_vectors:
+    if not word_vectors and not just_word2vec:
         # if we don't have word vectors, we need to one-hot encode everything
         df = pd.get_dummies(df, sparse=True)
     else:
@@ -132,11 +138,20 @@ def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_
         # any vectors in the dataframe (which scikit doesn't like)
         tmp_wv = pd.DataFrame([v for v in tmp_wv.values])
 
-        tmp_r = df.iloc[:, 1:-1]
+        tmp_r = df.iloc[:, 1:]
         tmp_r = pd.get_dummies(tmp_r, sparse=True)
         df = pd.concat([tmp_wv, tmp_r], axis=1)
 
     return ParsedInput(df, df_target, test_data, test_data_sentence_ending, words, split_line)
+
+
+def get_output_filename(classifier: str, percent_of_train_data: int, use_word_vectors: bool, just_word2vec: bool) -> str:
+    input_features = "CRF"
+    if use_word_vectors:
+        input_features = "WV_CRF"
+    if just_word2vec:
+        input_features = "JustWV"
+    return "output_{}_{}_{}P".format(classifier, input_features, percent_of_train_data)
 
 
 if __name__ == '__main__':
