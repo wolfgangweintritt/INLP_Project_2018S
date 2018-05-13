@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """parse training and test data. predict CHUNK-tags via MLP classifier. create outputfile in matching format for conlleval."""
+import time
 from datetime import datetime
 from gensim.models import word2vec
 from pprint import pprint
@@ -44,16 +45,16 @@ def main():
     split_line                = parsed_input.split_line
 
     if classifier == "MLP":
-        clf = MLPClassifier(hidden_layer_sizes=(50,), activation='relu', solver='adam', max_iter=200)
+        clf = MLPClassifier(hidden_layer_sizes=(100,), activation='relu', solver='adam', max_iter=200)
     elif classifier == "RF":
-        clf = RandomForestClassifier(n_estimators=50)
+        clf = RandomForestClassifier(n_estimators=200)
     else:  # classifier = "SVM"
         clf = SVC()
         #clf = NuSVC()
     if use_grid_search:
         print("tuning hyper-parameters...")
         if classifier == "MLP":
-            params = {"hidden_layer_sizes": [(10,), (10, 20, 10)], "max_iter": [200, 500]}
+            params = {"hidden_layer_sizes": [(10,), (10, 20, 10), (100,)], "max_iter": [200, 500]}
         elif classifier == "RF":
             params = {'n_estimators': [10, 40, 70]}
         else:  # classifier = "SVM"
@@ -72,6 +73,7 @@ def main():
     # pprint(test_data_predictions)
 
     filename = get_output_filename(classifier, percent_of_train_data, use_word_vectors, just_word2vec)
+    print("creating output file and running conlleval...")
     output_parser.parse_output(test_data, words[split_line:], label_encoder.inverse_transform(test_data_predictions), test_data_sentence_ending, filename)
     print("done, took: {}".format((datetime.now() - startTime).seconds))
 
@@ -151,7 +153,7 @@ def get_output_filename(classifier: str, percent_of_train_data: int, use_word_ve
         input_features = "WV_CRF"
     if just_word2vec:
         input_features = "JustWV"
-    return "output_{}_{}_{}P".format(classifier, input_features, percent_of_train_data)
+    return "_{}_{}_{}P_{}".format(classifier, input_features, percent_of_train_data, str(int(time.time())))
 
 
 if __name__ == '__main__':
