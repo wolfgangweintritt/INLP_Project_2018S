@@ -93,7 +93,7 @@ def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_
     # merged data size: 259104
     # we have to merge the data because of one-hot encoding
     merged_data = train_data + test_data
-    words = [w for (w, p, pp, np, c) in merged_data]
+    words = [arr[0] for arr in merged_data]
     print("merged data size: {}".format(len(merged_data)))
 
     if word_vectors or just_word2vec:
@@ -103,7 +103,7 @@ def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_
         #  e.g. [["Her", "name", "is", "Puck", "and", "she", "likes", "to", "solo-mid"], ...]
         sentences = []
         sentence  = []
-        for word, pos, prevpos, nextpos, chunk in merged_data:
+        for word, pos, prevpos, pp, nextpos, nn, chunk in merged_data:
             sentence.append(word)
             if nextpos == "AFTER_SENTENCE":
                 # meaning we currently have the end of the sentence
@@ -120,7 +120,7 @@ def parse_input_and_get_dataframe(train_filename: str, test_filename: str, word_
             itm.insert(0, vectors[word])
 
     if just_word2vec:  # leave out POS tags
-        merged_data = [[w, p, c] for (w, p, pp, np, c) in merged_data]
+        merged_data = [[arr[0], arr[1], arr[-1]] for arr in merged_data]
 
     # create the dataframe (split up target and data, label-encode target)
     print("creating dataframe...")
